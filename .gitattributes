@@ -1,2 +1,38 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+import requests
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import KeyboardButton, ReplyKeyboardMarkup
+
+TOKEN = '5029206979:AAEUe8jkk1rlcR3DGYf6dxpzt0lO2Dph2qc'
+print("Bot started")
+updater = Updater(TOKEN)
+
+
+def start(update, context):
+    chat = update.effective_chat
+    buttons = [[KeyboardButton('USD')], [KeyboardButton('EUR')], [KeyboardButton('PLN')], 
+    [KeyboardButton('JPY')], [KeyboardButton('GBP')], [KeyboardButton('CHF')], 
+    [KeyboardButton('HKD')], [KeyboardButton('INR')], [KeyboardButton('LKR')], 
+    [KeyboardButton('CAD')]]
+    context.bot.send_message(chat_id=chat.id, text="Hi there! \nI can show you chenges of currency rate during the year.\n let's start!", 
+    reply_markup=ReplyKeyboardMarkup(buttons))
+
+
+def currency_changes(update, context):
+    chat = update.effective_chat
+    currency_name = update.message.text
+    if currency_name in ('USD', 'EUR', 'PLN', 'JPY', 'GBP', 'CHF', 'HKD', 'INR', 'LKR', 'CAD'):
+        currency_code = requests.get(f'https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode={currency_name}&date=20220317&json').json()
+        last_year_currency_code = requests.get(f'https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode={currency_name}&date=20210317&json').json()
+        rate = currency_code[0]['rate']
+        last_year_rate = last_year_currency_code[0]['rate']
+        difference = float(rate) - float(last_year_rate)
+        message = f'{currency_name}\ncurrent rate: {"%.2f" % rate} UAH\n\nrate of the last year: {"%.2f" % last_year_rate} UAH\n\n the difference: {"%.2f" % difference} UAH'
+    context.bot.send_message(chat_id=chat.id, text=message)
+
+
+disp = updater.dispatcher
+disp.add_handler(CommandHandler('start', start))
+disp.add_handler(MessageHandler(Filters.all, currency_changes))
+
+updater.start_polling()
+updater.idle()
