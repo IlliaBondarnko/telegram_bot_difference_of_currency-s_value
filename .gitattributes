@@ -1,4 +1,5 @@
 import requests
+import datetime
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
@@ -11,7 +12,7 @@ def start(update, context):
     chat = update.effective_chat
     buttons = [[KeyboardButton('USD')], [KeyboardButton('EUR')], [KeyboardButton('PLN')], 
     [KeyboardButton('JPY')], [KeyboardButton('GBP')], [KeyboardButton('CHF')], 
-    [KeyboardButton('HKD')], [KeyboardButton('INR')], [KeyboardButton('LKR')], 
+    [KeyboardButton('HKD')], [KeyboardButton('INR')], [KeyboardButton('GEL')], 
     [KeyboardButton('CAD')]]
     context.bot.send_message(chat_id=chat.id, text="Hi there! \nI can show you chenges of currency rate during the year.\n let's start!", 
     reply_markup=ReplyKeyboardMarkup(buttons))
@@ -20,9 +21,12 @@ def start(update, context):
 def currency_changes(update, context):
     chat = update.effective_chat
     currency_name = update.message.text
-    if currency_name in ('USD', 'EUR', 'PLN', 'JPY', 'GBP', 'CHF', 'HKD', 'INR', 'LKR', 'CAD'):
-        currency_code = requests.get(f'https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode={currency_name}&date=20220317&json').json()
-        last_year_currency_code = requests.get(f'https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode={currency_name}&date=20210317&json').json()
+    now_D = datetime.datetime.now()
+    current_date = str(now_D.strftime('%Y')+now_D.strftime('%m')+now_D.strftime('%d'))
+    lst_y_date = str(int(current_date) - 10000)
+    if currency_name in ('USD', 'EUR', 'PLN', 'JPY', 'GBP', 'CHF', 'HKD', 'INR', 'GEL', 'CAD'):
+        currency_code = requests.get(f'https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode={currency_name}&date={current_date}&json').json()
+        last_year_currency_code = requests.get(f'https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode={currency_name}&date={lst_y_date}&json').json()
         rate = currency_code[0]['rate']
         last_year_rate = last_year_currency_code[0]['rate']
         difference = float(rate) - float(last_year_rate)
